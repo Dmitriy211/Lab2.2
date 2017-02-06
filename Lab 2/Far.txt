@@ -1,0 +1,101 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ConsoleApplication1
+{
+    class State                                             //Состояние папки
+    {
+        
+        private DirectoryInfo folder;
+        public DirectoryInfo Folder                         //Папки внутри
+        {
+            get { return folder; }
+            set
+            {
+                folder = value;
+                MaxIndex = folder.GetDirectories().Length;  //Колличество папок внутри - это максимальный индекс
+            }
+        }
+        private int index;
+        public int Index                                    //Индекс
+        {
+            get
+            {
+                return index;
+            }
+            set
+            {
+                if (value >= 0 && value < MaxIndex)         //Индекс не может быть 0 или больше колличества папок
+                {
+                    index = value;
+                }
+            }
+        }
+        public int MaxIndex { get; set; }
+    }
+
+    class Program
+    {
+        static void ShowFolderContent(State state)                  //показать что в папке
+        {
+            Console.Clear();                                        //очистить консоль
+            DirectoryInfo[] list = state.Folder.GetDirectories();   //взять папки папки нынешнего состояния
+            for (int i = 0; i < list.Length; ++i)                   //напечаать папки и выделить, если индекс = индекс
+            {
+                if (i == state.Index)
+                {
+                    Console.BackgroundColor = ConsoleColor.Blue;
+                }
+                Console.Write(list[i].Name);
+                Console.BackgroundColor = ConsoleColor.Black;
+                Console.WriteLine();
+            }
+        }
+        static void Main(string[] args)
+        {
+            Stack<State> layers = new Stack<State>();                   //Слои на базе состояния
+            bool alive = true;
+            State state = new State { Folder = new DirectoryInfo(@"C:\"), Index = 0 };  //Начальная папка основана на состоянии
+            layers.Push(state);                                         //Забить в память слоёв нынюшнюю папку
+
+            while (alive)
+            {
+                ShowFolderContent(layers.Peek());                       // показать контент папки верхнего слоя
+
+                ConsoleKeyInfo pressedKey = Console.ReadKey();
+                switch (pressedKey.Key)
+                {
+                    case ConsoleKey.Enter:                              //Если Ёптег
+                        DirectoryInfo f = layers.Peek().Folder.GetDirectories()[layers.Peek().Index]; // f - берет папку верхнего слоя, её папки, и исплняет "Получить папки той папки[индек которй - нынешний индекс] 
+                        State substate = new State                      //новое состояние
+                        {
+                            Folder = f,                                 //новая папка - f
+                            Index = 0                                   //новый индекс - 0
+                        };
+                        layers.Push(substate);                          //вставить в слои новое состояние
+                        break;
+                    case ConsoleKey.Backspace:                          //Если Васк$расе
+                        if (layers.Count != 1)
+                            layers.Pop();
+                            break;
+                    case ConsoleKey.Escape:                             //Если Е$саре
+                        alive = false;
+                        break;
+                    case ConsoleKey.DownArrow:                          //Если Вниз
+                        layers.Peek().Index++;
+                        break;
+                    case ConsoleKey.UpArrow:                            //Если вверх
+                        layers.Peek().Index--;
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+}
